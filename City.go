@@ -3,10 +3,10 @@ package main
 import "math/rand"
 
 type City struct {
-	TradingItems map[Products]*TradingItem
+	Inventory map[ProductType]*Product
 
-	Usage      map[Products]int
-	Production map[Products]int
+	Usage      map[ProductType]int
+	Production map[ProductType]int
 
 	Name       string
 	Population int
@@ -16,20 +16,19 @@ type City struct {
 
 func NewCity(name string, population int, x int, y int) *City {
 	city := &City{
-		TradingItems: make(map[Products]*TradingItem),
-		Usage:        make(map[Products]int),
-		Production:   make(map[Products]int),
-		Name:         name,
-		Population:   population,
-		X:            x,
-		Y:            y,
+		Inventory:  NewProducts(),
+		Usage:      make(map[ProductType]int),
+		Production: make(map[ProductType]int),
+		Name:       name,
+		Population: population,
+		X:          x,
+		Y:          y,
 	}
 
 	for i := 0; i < 10; i++ {
-		city.TradingItems[Products(i)] = NewTradingItem()
-		city.TradingItems[Products(i)].Amount = rand.Intn(100)
-		city.Production[Products(i)] = rand.Intn(5)
-		city.Usage[Products(i)] = rand.Intn(5)
+		city.Inventory[ProductType(i)].Items = make([]*TradingItem, rand.Intn(100))
+		city.Production[ProductType(i)] = rand.Intn(5)
+		city.Usage[ProductType(i)] = rand.Intn(5)
 	}
 
 	return city
@@ -37,12 +36,18 @@ func NewCity(name string, population int, x int, y int) *City {
 
 func (c *City) UpdateProduction() {
 	for i := 0; i < 10; i++ {
-		c.TradingItems[Products(i)].Add(c.Production[Products(i)])
+		produced := c.Production[ProductType(i)]
+		for j := 0; j < produced; j++ {
+			c.Inventory[ProductType(i)].AddItem(NewTradingItem(false, c.Inventory[ProductType(i)]))
+		}
 	}
 }
 
 func (c *City) UpdateUsage() {
 	for i := 0; i < 10; i++ {
-		c.TradingItems[Products(i)].Remove(c.Usage[Products(i)])
+		used := c.Usage[ProductType(i)]
+		for j := 0; j < used; j++ {
+			c.Inventory[ProductType(i)].PopItem()
+		}
 	}
 }

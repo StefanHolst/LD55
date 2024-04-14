@@ -5,9 +5,9 @@ import (
 	"math/rand"
 )
 
-type Products int
+type ProductType int
 
-var ProductsToString = map[Products]string{
+var ProductTypeToString = map[ProductType]string{
 	Wood:    "Wood",
 	Stone:   "Stone",
 	Iron:    "Iron",
@@ -22,7 +22,7 @@ var ProductsToString = map[Products]string{
 }
 
 const (
-	Wood Products = iota
+	Wood ProductType = iota
 	Stone
 	Iron
 	Gold
@@ -35,33 +35,56 @@ const (
 	Leather
 )
 
-type TradingItem struct {
+type Product struct {
+	ProductType  ProductType
 	Value        float64
-	Amount       int
 	ScalingValue int
-	IsSummoned   bool
+	//Weight       float64
+	Items []*TradingItem
 }
 
-func NewTradingItem() *TradingItem {
-	return &TradingItem{
+func NewProduct(productType ProductType) *Product {
+	return &Product{
+		ProductType:  productType,
 		ScalingValue: rand.Intn(2000) + 200,
 	}
 }
 
-func (t *TradingItem) Add(amount int) {
-	t.Amount += amount
-	t.ScaleValue()
-}
-
-func (t *TradingItem) Remove(amount int) {
-	if (t.Amount - amount) < 0 {
-		t.Amount = 0
-	} else {
-		t.Amount -= amount
+func NewProducts() map[ProductType]*Product {
+	products := make(map[ProductType]*Product)
+	for i := 0; i < 10; i++ {
+		products[ProductType(i)] = NewProduct(ProductType(i))
 	}
-	t.ScaleValue()
+	return products
 }
 
-func (t *TradingItem) ScaleValue() {
-	t.Value = math.Pow(float64(t.Amount+1), -0.3) * float64(t.ScalingValue)
+func (p *Product) updateScale() {
+	p.Value = math.Pow(float64(len(p.Items)+1), -0.3) * float64(p.ScalingValue)
+}
+
+func (p *Product) AddItem(item *TradingItem) {
+	p.Items = append(p.Items, item)
+	p.updateScale()
+}
+
+func (p *Product) PopItem() *TradingItem {
+	if len(p.Items) == 0 {
+		return nil
+	}
+	item := p.Items[0]
+	p.Items = p.Items[1:]
+	p.updateScale()
+	return item
+}
+
+type TradingItem struct {
+	IsSummoned bool
+	Product    *Product
+}
+
+func NewTradingItem(isSummoned bool, product *Product) *TradingItem {
+	return &TradingItem{
+		IsSummoned: isSummoned,
+		Product:    product,
+	}
 }

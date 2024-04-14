@@ -5,9 +5,11 @@ import (
 )
 
 var running bool
+
 var app *tview.Application
-var grid *tview.Grid // Main grid
-var inventoryView *InventoryView
+var pages *tview.Pages
+var gameLayout *GameLayoutView
+
 var cities []*City
 var player *Player
 
@@ -23,31 +25,18 @@ func main() {
 	cities = append(cities, NewCity("Sydney", 1000, 141, 40))
 	player = NewPlayer("Player")
 
+	gameLayout = NewGameLayoutView(player, cities)
+
 	// Create application
 	app = tview.NewApplication()
-	pages := tview.NewPages()
-
-	grid = tview.NewGrid().
-		SetRows(0).
-		SetColumns(0).
-		SetBorders(true)
-
-	//inventoryView = NewInventoryView(city, player)
-	//grid.AddItem(inventoryView, 0, 0, 1, 1, 0, 0, false)
-
-	world := NewMapView(cities)
-	grid.AddItem(world, 0, 0, 1, 1, 0, 0, false)
-
-	//go mainLoop()
-
-	grid.
-		//AddItem(world, 0, 0, 1, 1, 0, 0, false).
-		SetMouseCapture(handleMouseEvents).
-		SetInputCapture(handleButtonEvents)
+	pages = tview.NewPages().
+		AddPage("welcome", NewWelcomeView(), true, true).
+		AddPage("game", gameLayout, true, false)
 
 	// Run the application and handle any errors that occur.
 	running = true
-	app.SetRoot(grid, true).
+	app.SetRoot(pages, true).
+		SetFocus(pages).
 		EnableMouse(true)
 	if err := app.Run(); err != nil {
 		running = false
@@ -56,14 +45,16 @@ func main() {
 	running = false
 }
 
-func mainLoop() {
-	// do something
-	//for running {
-	//	city.UpdateProduction()
-	//	city.UpdateUsage()
-	//
-	//	app.QueueUpdateDraw(inventoryView.UpdateTable)
-	//
-	//	time.Sleep(1 * time.Second)
-	//}
+func showDialog(message string) {
+	modal := tview.NewModal()
+	modal.
+		SetText(message).
+		AddButtons([]string{"Ok"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			app.SetRoot(pages, true).SetFocus(pages)
+		})
+
+	if err := app.SetRoot(modal, false).SetFocus(modal).Run(); err != nil {
+		panic(err)
+	}
 }
