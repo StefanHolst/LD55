@@ -1,0 +1,48 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    - name: Go Get
+      run: go get
+    - name: Build
+      env: 
+        GOOS: linux
+        GOARCH: amd64
+      run: go build -o LD55
+    - name: Build
+      env: 
+        GOOS: windows
+        GOARCH: 386
+        GO386: softfloat
+      run: go build -o LD55.exe
+    - name: Save artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Windows
+        retention-days: 30
+        path: "LD55.exe"
+    - name: Save artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Linux
+        retention-days: 30
+        path: "LD55"
+    - name: Save artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: MacOS
+        retention-days: 30
+        path: "LD55"
