@@ -21,25 +21,30 @@ jobs:
       env: 
         GOOS: linux
         GOARCH: amd64
-      run: go build -o LD55
+      run: go build -o linux/LD55
     - name: Build
       env: 
         GOOS: windows
         GOARCH: 386
         GO386: softfloat
-      run: go build -o LD55.exe
+      run: go build -o win/LD55.exe
+    - name: Build
+      env:
+        GOOS: darwin
+        GOARCH: amd64
+      run: go build -o macos/LD55
     - name: Save artifacts
       uses: actions/upload-artifact@v3
       with:
         name: Windows
         retention-days: 30
-        path: "LD55.exe"
+        path: "win/LD55.exe"
     - name: Save artifacts
       uses: actions/upload-artifact@v3
       with:
         name: Linux
         retention-days: 30
-        path: "LD55"
+        path: "linux/LD55"
     - name: Save artifacts
       uses: actions/upload-artifact@v3
       with:
