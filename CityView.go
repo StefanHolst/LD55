@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"math/rand"
 	"strconv"
 )
 
@@ -30,7 +31,7 @@ func NewCityView(city *City) *CityView {
 }
 
 func (cv *CityView) setupTable() {
-	cv.SetRows(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1).SetColumns(make([]int, 4)...)
+	cv.SetRows(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1).SetColumns(make([]int, 4)...)
 
 	// City name
 	cv.primitives["City-name"] = tview.NewTextView().SetTextAlign(tview.AlignCenter).SetText(cv.City.Name)
@@ -74,6 +75,30 @@ func (cv *CityView) setupTable() {
 		// Sell button
 		cell.AddItem(tview.NewButton("Sell").SetSelectedFunc(func() { cv.handleButton(false, cv.City, key) }), 0, 1, 1, 1, 0, 0, false)
 	}
+
+	// Artifacts
+	cv.primitives["Artifact"] = tview.NewTextView()
+	cv.AddItem(cv.primitives["Artifact"], rowOffset+12, 0, 1, 1, 0, 0, false)
+
+	// Artifact value
+	cv.primitives["Artifact-value"] = tview.NewTextView()
+	cv.AddItem(cv.primitives["Artifact-value"], rowOffset+12, 1, 1, 1, 0, 0, false)
+	cv.AddItem(tview.NewButton("Buy").SetSelectedFunc(func() {
+		if player.BuyArtifact(cv.City) == false {
+			return
+		}
+
+		// set artifact as sold
+		cv.City.ArtifactSold = true
+
+		// update artifacts prices
+		for _, city := range gameLayout.Cities {
+			city.Artifact.Value *= rand.Float64() + 1
+		}
+
+		gameLayout.UpdateViews()
+
+	}), rowOffset+12, 2, 1, 1, 0, 0, false)
 }
 
 func (cv *CityView) UpdateViews() {
@@ -84,7 +109,7 @@ func (cv *CityView) UpdateViews() {
 		key := ProductType(i)
 
 		// amount
-		cv.primitives[ProductTypeToString[key]+"amount"].(*tview.TextView).SetText(strconv.Itoa(len(cv.City.Inventory[key].Items)))
+		cv.primitives[ProductTypeToString[key]+"amount"].(*tview.TextView).SetText(strconv.Itoa(cv.City.Inventory[key].Amount))
 
 		// buy price
 		cv.primitives[ProductTypeToString[key]+"buy-price"].(*tview.TextView).SetText(fmt.Sprintf("%f", cv.City.Inventory[key].Value))
@@ -114,4 +139,14 @@ func (cv *CityView) handleButtonEvents(event *tcell.EventKey) *tcell.EventKey {
 func (cv *CityView) updateCity(city *City) {
 	cv.City = city
 	cv.UpdateViews()
+
+	// Update Artifact
+	cv.primitives["Artifact"].(*tview.TextView).SetText(ArtifactTypeToString[cv.City.Artifact.ArtifactType])
+
+	// Update Artifact value
+	if cv.City.ArtifactSold {
+		cv.primitives["Artifact-value"].(*tview.TextView).SetText("Sold out")
+	} else {
+		cv.primitives["Artifact-value"].(*tview.TextView).SetText(fmt.Sprintf("%f", cv.City.Artifact.Value))
+	}
 }

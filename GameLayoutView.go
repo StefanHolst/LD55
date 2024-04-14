@@ -43,7 +43,7 @@ func NewGameLayoutView(player *Player, cities []*City) *GameLayoutView {
 	glv.time, _ = time.Parse("15:04:05", "00:00:00")
 
 	// world
-	glv.worldView = NewMapView(cities)
+	glv.worldView = NewMapView(cities, player)
 
 	// Cities
 	glv.cityView = NewCityView(cities[0])
@@ -68,7 +68,6 @@ func NewGameLayoutView(player *Player, cities []*City) *GameLayoutView {
 	glv.AddItem(glv.rightViewFlex, 0, 1, 1, 1, 0, 0, false)
 
 	go glv.logicLoop()
-	go glv.summonLoop()
 	go glv.mainLoop()
 
 	return glv
@@ -86,37 +85,46 @@ func (glv *GameLayoutView) handleButtonEvents(event *tcell.EventKey) *tcell.Even
 
 func (glv *GameLayoutView) logicLoop() {
 	for running {
-		for _, city := range cities {
-			city.UpdateProduction()
-			city.UpdateUsage()
-		}
-
-		glv.playerStatsView.UpdateViews()
-
-		glv.time = glv.time.Add(1 * time.Second)
+		app.QueueUpdate(func() {
+			for _, city := range cities {
+				city.UpdateProduction()
+				city.UpdateUsage()
+			}
+		})
 
 		time.Sleep(1 * time.Second)
 	}
 }
 
-func (glv *GameLayoutView) summonLoop() {
-	for running {
-		player.SummonProducts()
-		time.Sleep(15 * time.Second)
-	}
-}
+var currentDay int
 
 func (glv *GameLayoutView) mainLoop() {
 	for running {
+		glv.time = glv.time.Add(1 * time.Minute)
+		// If the player is travelling, make the time go faster
+		if glv.Player.IsTravelling {
+			glv.time = glv.time.Add(15 * time.Minute)
+		}
+
+		// When we are changed day,
+		if glv.time.Day() != currentDay {
+			currentDay = glv.time.Day()
+			for _, city := range cities {
+				city.UpdateProductionScale()
+				city.UpdateUsageScale()
+			}
+		}
+
 		app.QueueUpdateDraw(glv.UpdateViews)
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
 func (glv *GameLayoutView) UpdateViews() {
 	glv.cityView.UpdateViews()
 	glv.playerInventoryView.UpdateViews()
+	glv.playerStatsView.UpdateViews()
 }
 
 func (glv *GameLayoutView) UpdateCity(city *City) {

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/rivo/tview"
-	"math"
+	"strings"
 )
 
 type PlayerStatsView struct {
@@ -26,37 +26,37 @@ func NewPlayerStatsView(player *Player) *PlayerStatsView {
 
 	psv.primitives["time"] = tview.NewTextView()
 	psv.primitives["tradedBalance"] = tview.NewTextView()
-	psv.primitives["summonedBalance"] = tview.NewTextView()
-	psv.primitives["suspicion"] = tview.NewTextView()
 	psv.primitives["account"] = tview.NewTextView()
+	psv.primitives["artifacts"] = tview.NewTextView()
 
 	// Time
-	psv.AddItem(psv.primitives["time"], 0, 0, 1, 1, 0, 0, false)
+	psv.AddItem(tview.NewTextView().SetText("Time"), 0, 0, 1, 1, 0, 0, false)
+	psv.AddItem(psv.primitives["time"], 0, 1, 1, 1, 0, 0, false)
 
-	// Village suspicion bar
-	psv.AddItem(tview.NewTextView().SetText("Villagers Suspicious"), 1, 0, 1, 1, 0, 0, false)
-	psv.AddItem(psv.primitives["suspicion"], 1, 1, 1, 1, 0, 0, false)
+	psv.AddItem(tview.NewTextView().SetText("Total Traded"), 1, 0, 1, 1, 0, 0, false)
+	psv.AddItem(psv.primitives["tradedBalance"], 1, 1, 1, 1, 0, 0, false)
 
-	psv.AddItem(tview.NewTextView().SetText("Total Traded"), 2, 0, 1, 1, 0, 0, false)
-	psv.AddItem(psv.primitives["tradedBalance"], 2, 1, 1, 1, 0, 0, false)
+	psv.AddItem(tview.NewTextView().SetText("Balance"), 2, 0, 1, 1, 0, 0, false)
+	psv.AddItem(psv.primitives["account"], 2, 1, 1, 1, 0, 0, false)
 
-	psv.AddItem(tview.NewTextView().SetText("Total Summoned Traded"), 3, 0, 1, 1, 0, 0, false)
-	psv.AddItem(psv.primitives["summonedBalance"], 3, 1, 1, 1, 0, 0, false)
-
-	psv.AddItem(tview.NewTextView().SetText("Balance"), 4, 0, 1, 1, 0, 0, false)
-	psv.AddItem(psv.primitives["account"], 4, 1, 1, 1, 0, 0, false)
-
+	// List artifacts
+	psv.AddItem(tview.NewTextView().SetText("Artifacts"), 4, 0, 1, 1, 0, 0, false)
+	psv.AddItem(psv.primitives["artifacts"], 4, 1, 1, 1, 0, 0, false)
 	return psv
 }
 
 func (psv *PlayerStatsView) UpdateViews() {
-	playerSuspicion := (player.summonedBalance / player.tradedBalance) * 100
-	if math.IsNaN(playerSuspicion) {
-		playerSuspicion = 0
-	}
-	psv.primitives["time"].(*tview.TextView).SetText(fmt.Sprintf("%s", gameLayout.time.Format("15:04:05")))
-	psv.primitives["suspicion"].(*tview.TextView).SetText(fmt.Sprintf("%d", int(playerSuspicion)))
+	psv.primitives["time"].(*tview.TextView).SetText(fmt.Sprintf("%s", gameLayout.time.Format("15:04")))
 	psv.primitives["tradedBalance"].(*tview.TextView).SetText(fmt.Sprintf("%f", player.tradedBalance))
-	psv.primitives["summonedBalance"].(*tview.TextView).SetText(fmt.Sprintf("%f", player.summonedBalance))
 	psv.primitives["account"].(*tview.TextView).SetText(fmt.Sprintf("%f", player.Account))
+
+	hasArtifacts := []string{}
+	for i := 0; i < len(ArtifactTypeToString); i++ {
+		if player.Artifacts[ArtifactType(i)] != nil {
+			hasArtifacts = append(hasArtifacts, "[x]")
+		} else {
+			hasArtifacts = append(hasArtifacts, "[ ]")
+		}
+	}
+	psv.primitives["artifacts"].(*tview.TextView).SetText(strings.Join(hasArtifacts, " "))
 }
